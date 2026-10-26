@@ -130,12 +130,18 @@
   details.add[open] summary::before,details.setup[open] summary::before{content:"– "}
   .add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
   .add-grid .full{grid-column:1 / -1}
-  .setup-row{display:grid;grid-template-columns:20px 1.4fr .7fr .9fr auto;gap:7px;align-items:center;margin-bottom:7px}
-  .setup-row .ix{font-family:var(--font-num);font-size:.72rem;color:var(--muted);text-align:right}
+  .setup-row{display:grid;grid-template-columns:22px 1fr 1fr;grid-template-areas:"ix nama nama" ". no kelas" ". jaw sv";gap:6px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+  .setup-row:first-child{border-top:none;margin-top:6px}
+  .setup-row .ix{grid-area:ix;font-family:var(--font-num);font-size:.72rem;color:var(--muted);text-align:right}
   .setup-row input{padding:7px 9px;font-size:.84rem}
-  .setup-row .sv{background:var(--accent);color:#fff;font-size:.68rem;padding:5px 9px;border-radius:7px;opacity:0;pointer-events:none}
+  .setup-row .f-nama{grid-area:nama}.setup-row .f-no{grid-area:no}.setup-row .f-kelas{grid-area:kelas}.setup-row .f-jaw{grid-area:jaw}
+  .setup-row .sv{grid-area:sv;background:var(--accent);color:#fff;font-size:.74rem;padding:8px 9px;border-radius:7px;opacity:.35;pointer-events:none}
   .setup-row .sv.on{opacity:1;pointer-events:auto}
-  .setup-head{display:grid;grid-template-columns:20px 1.4fr .7fr .9fr auto;gap:7px;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:10px 0 6px;padding-left:2px}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px}
+  .tab{background:none;color:var(--muted);padding:9px;font-size:.86rem;border-radius:7px}
+  .tab.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .tab:focus-visible,.linkbtn:focus-visible,.toggle:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .hint{font-size:.76rem;color:var(--muted);margin-top:10px;text-align:center}
   .toggle{background:none;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:.72rem;font-weight:700;padding:5px 11px}
   .note{background:var(--accent-soft);color:var(--accent-ink);border-radius:var(--radius-sm);padding:9px 12px;font-size:.76rem;margin-bottom:16px}
   .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(20px + env(safe-area-inset-bottom,0px));
@@ -149,10 +155,13 @@
   .login-card .brand .eyebrow{margin-bottom:4px}
   .err{color:var(--bad);background:var(--bad-soft);border-radius:var(--radius-sm);padding:9px 12px;font-size:.8rem;font-weight:600;margin-top:12px;display:none}
   .err.show{display:block}
+  .ok{color:var(--ok);background:var(--ok-soft);border-radius:var(--radius-sm);padding:9px 12px;font-size:.8rem;font-weight:600;margin-top:12px;display:none}
+  .ok.show{display:block}
+  .linkbtn{background:none;border:none;color:var(--accent);font-size:.8rem;font-weight:700;padding:12px 0 0;width:100%;text-align:center;cursor:pointer}
   .center-note{text-align:center;color:var(--muted);font-size:.84rem;padding:60px 16px}
   @media (max-width:440px){
     .tiles{grid-template-columns:1fr 1fr}.tiles .tile:first-child{grid-column:1 / -1}
-    .setup-row,.setup-head{grid-template-columns:16px 1fr .5fr .62fr auto}
+    #studentView .tiles .tile:first-child{grid-column:auto}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -167,9 +176,24 @@
     <div class="brand">
       <p class="eyebrow">Badan Wakil Pelajar · MRSM Taiping</p>
       <h1>e-Disiplin BWP</h1>
-      <p class="sub">Log masuk untuk teruskan</p>
+      <p class="sub">Semakan markah demerit pelajar wakil</p>
     </div>
-    <form id="loginForm">
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab on" data-mode="pelajar" role="tab">Pelajar</button>
+      <button type="button" class="tab" data-mode="guru" role="tab">Guru</button>
+    </div>
+
+    <form id="studentForm">
+      <div class="field">
+        <label class="fl" for="noMaktab">Nombor maktab</label>
+        <input type="text" id="noMaktab" autocomplete="off" autocapitalize="characters" placeholder="Masukkan nombor maktab anda" required>
+      </div>
+      <button class="btn-primary" id="studentBtn" type="submit">Semak rekod saya</button>
+      <div class="err" id="studentErr"></div>
+      <p class="hint">Tak perlu akaun. Hanya rekod anda sendiri dipaparkan.</p>
+    </form>
+
+    <form id="loginForm" hidden>
       <div class="field">
         <label class="fl" for="email">Email</label>
         <input type="email" id="email" autocomplete="username" required>
@@ -179,7 +203,28 @@
         <input type="password" id="password" autocomplete="current-password" required>
       </div>
       <button class="btn-primary" id="loginBtn" type="submit">Log masuk</button>
+      <button type="button" class="linkbtn" id="forgotBtn">Lupa kata laluan?</button>
       <div class="err" id="loginErr"></div>
+      <div class="ok" id="loginOk"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== SET KATA LALUAN BARU (recovery) ===== -->
+<div id="recoveryView" class="login-wrap" hidden>
+  <div class="login-card">
+    <div class="brand">
+      <p class="eyebrow">e-Disiplin BWP</p>
+      <h1>Kata Laluan Baru</h1>
+      <p class="sub">Masukkan kata laluan baru anda</p>
+    </div>
+    <form id="recoveryForm">
+      <div class="field">
+        <label class="fl" for="newPw">Kata laluan baru</label>
+        <input type="password" id="newPw" autocomplete="new-password" minlength="6" required>
+      </div>
+      <button class="btn-primary" id="recoveryBtn" type="submit">Simpan kata laluan</button>
+      <div class="err" id="recoveryErr"></div>
     </form>
   </div>
 </div>
@@ -253,11 +298,11 @@
       <tbody id="sumBody"></tbody>
     </table></div>
     <div class="legend">
-      <span><i style="background:var(--ok)"></i>Hijau · 0–5</span>
-      <span><i style="background:var(--warn)"></i>Kuning · 6–11</span>
-      <span><i style="background:var(--bad)"></i>Merah · 12+</span>
+      <span><i style="background:var(--ok)"></i>Hijau · tiada kesalahan</span>
+      <span><i style="background:var(--warn)"></i>Kuning · 1 kesalahan (amaran)</span>
+      <span><i style="background:var(--bad)"></i>Merah · rujuk JPPM</span>
     </div>
-    <p class="sub" style="margin-top:10px">Ambang JPPM: <b>2 kesalahan</b> atau <b>4 markah demerit</b> (mana sampai dulu) ditanda <span class="flag" style="margin:0">⚑ JPPM</span>.</p>
+    <p class="sub" style="margin-top:10px">Merah = <b>2 kesalahan</b> atau <b>4 markah demerit</b> (mana sampai dulu). Pelajar ini ditanda <span class="flag" style="margin:0">⚑ JPPM</span> dan boleh dijana surat.</p>
   </section>
 
   <section class="card">
@@ -276,13 +321,12 @@
 
   <section class="card">
     <div class="card-head"><span class="n">5</span><h2>Tetapan — nama pelajar</h2></div>
-    <p class="sub" style="margin-top:0">Kemas kini nama, kelas &amp; jawatan. Tekan Simpan pada baris yang diubah.</p>
+    <p class="sub" style="margin-top:0">Isi nama, <b>nombor maktab</b>, kelas &amp; jawatan. Pelajar guna nombor maktab untuk semak rekod sendiri. Tekan Simpan pada baris yang diubah.</p>
     <details class="setup">
       <summary>Senarai pelajar</summary>
-      <div class="setup-head"><span></span><span>Nama</span><span>Kelas</span><span>Jawatan</span><span></span></div>
       <div id="stuRows"></div>
     </details>
-    <p class="sub" style="margin-top:12px">Urus akaun guru &amp; pelajar (tambah/buang) di papan pemuka Supabase → Authentication.</p>
+    <p class="sub" style="margin-top:12px">Akaun guru diurus di Supabase → Authentication. Pelajar tak perlu akaun.</p>
   </section>
 
   <p class="sub" style="text-align:center">e-Disiplin BWP · data disimpan selamat di Supabase · MRSM Taiping</p>
@@ -298,7 +342,7 @@
     </div>
     <div style="display:flex;gap:6px">
       <button class="toggle" id="themeBtn2">Tema</button>
-      <button class="toggle" id="logoutBtn2">Log keluar</button>
+      <button class="toggle" id="logoutBtn2">Semak lain</button>
     </div>
   </header>
   <div class="tiles" style="grid-template-columns:1fr 1fr">
@@ -344,10 +388,19 @@ var $=function(id){return document.getElementById(id);};
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function fmtDate(iso){var d=iso?new Date(String(iso).length<=10?iso+'T00:00:00':iso):new Date();
   return d.toLocaleDateString('ms-MY',{day:'2-digit',month:'short',year:'numeric'});}
-function statusOf(p){ if(p>=12)return['b-bad','Merah']; if(p>=6)return['b-warn','Kuning']; return['b-ok','Hijau'];}
+// Status selaras dengan ambang JPPM:
+// Merah  = >=2 kesalahan ATAU >=4 markah (rujuk JPPM)
+// Kuning = 1 kesalahan, <4 markah (amaran)
+// Hijau  = tiada kesalahan
+function statusOf(n,p){
+  if(n>=TRIG_OFC||p>=TRIG_PTS)return['b-bad','Merah'];
+  if(n>=1)return['b-warn','Kuning'];
+  return['b-ok','Hijau'];
+}
 function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add('show');
   clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2200);}
-function show(view){["loadingView","loginView","appView","studentView"].forEach(function(v){$(v).hidden=(v!==view);});}
+function show(view){["loadingView","loginView","recoveryView","appView","studentView"].forEach(function(v){$(v).hidden=(v!==view);});}
+var isRecovery=(location.hash.indexOf('type=recovery')>-1);
 
 var me=null, students=[], offences=[], records=[];
 
@@ -366,9 +419,71 @@ $("loginForm").addEventListener('submit',function(e){
 });
 function doLogout(){ sb.auth.signOut(); }
 $("logoutBtn").addEventListener('click',doLogout);
-$("logoutBtn2").addEventListener('click',doLogout);
+
+// ====== TAB PELAJAR / GURU ======
+function setMode(m){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.getAttribute('data-mode')===m);});
+  $("studentForm").hidden=(m!=='pelajar');
+  $("loginForm").hidden=(m!=='guru');
+  ["studentErr","loginErr","loginOk"].forEach(function(id){$(id).classList.remove('show');});
+  try{localStorage.setItem('edisiplin_mode',m);}catch(e){}
+}
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){setMode(t.getAttribute('data-mode'));});
+});
+(function(){var m='pelajar';try{m=localStorage.getItem('edisiplin_mode')||'pelajar';}catch(e){}setMode(m);})();
+
+// ====== SEMAKAN PELAJAR (nombor maktab, tanpa login) ======
+$("studentForm").addEventListener('submit',function(e){
+  e.preventDefault();
+  var no=$("noMaktab").value.trim();
+  $("studentErr").classList.remove('show');
+  if(!no){$("studentErr").textContent="Masukkan nombor maktab.";$("studentErr").classList.add('show');return;}
+  $("studentBtn").disabled=true; $("studentBtn").textContent="Menyemak…";
+  sb.rpc('semak_pelajar',{p_no:no}).then(function(res){
+    $("studentBtn").disabled=false; $("studentBtn").textContent="Semak rekod saya";
+    if(res.error){$("studentErr").textContent="Masalah sambungan. Cuba lagi.";$("studentErr").classList.add('show');return;}
+    if(!res.data){$("studentErr").textContent="Nombor maktab tidak dijumpai. Semak semula atau rujuk guru penasihat BWP.";$("studentErr").classList.add('show');return;}
+    renderStudent(res.data);
+  });
+});
+$("logoutBtn2").addEventListener('click',function(){
+  $("noMaktab").value=''; setMode('pelajar'); show("loginView");
+});
+
+// Lupa kata laluan — hantar pautan reset ke email
+$("forgotBtn").addEventListener('click',function(){
+  var email=$("email").value.trim();
+  $("loginErr").classList.remove('show'); $("loginOk").classList.remove('show');
+  if(!email){ $("email").focus(); $("loginErr").textContent="Isi email dulu, kemudian tekan 'Lupa kata laluan?'."; $("loginErr").classList.add('show'); return; }
+  var base=location.href.split('#')[0].split('?')[0];
+  sb.auth.resetPasswordForEmail(email,{redirectTo:base}).then(function(){
+    $("loginOk").textContent="Jika email ini wujud, pautan set semula kata laluan telah dihantar. Semak peti masuk (dan folder spam)."; $("loginOk").classList.add('show');
+  }).catch(function(){
+    $("loginErr").textContent="Masalah sambungan. Cuba lagi."; $("loginErr").classList.add('show');
+  });
+});
+
+// Set kata laluan baru selepas klik pautan email
+$("recoveryForm").addEventListener('submit',function(e){
+  e.preventDefault();
+  var pw=$("newPw").value;
+  $("recoveryErr").classList.remove('show'); $("recoveryBtn").disabled=true; $("recoveryBtn").textContent="Menyimpan…";
+  sb.auth.updateUser({password:pw}).then(function(res){
+    $("recoveryBtn").disabled=false; $("recoveryBtn").textContent="Simpan kata laluan";
+    if(res.error){ $("recoveryErr").textContent="Gagal: "+res.error.message; $("recoveryErr").classList.add('show'); return; }
+    isRecovery=false;
+    toast('Kata laluan berjaya ditukar. Sila log masuk.');
+    sb.auth.signOut();
+  }).catch(function(){
+    $("recoveryBtn").disabled=false; $("recoveryBtn").textContent="Simpan kata laluan";
+    $("recoveryErr").textContent="Masalah sambungan. Cuba lagi."; $("recoveryErr").classList.add('show');
+  });
+});
 
 sb.auth.onAuthStateChange(function(event,session){
+  if(event==='PASSWORD_RECOVERY'){ isRecovery=true; show("recoveryView"); return; }
+  if(isRecovery){ return; }
   if(session&&session.user){ onLogin(session.user); } else { me=null; show("loginView"); }
 });
 
@@ -376,12 +491,17 @@ function onLogin(user){
   show("loadingView");
   sb.from('profiles').select('*').eq('id',user.id).single().then(function(res){
     if(res.error||!res.data){
-      show("loginView");
+      show("loginView"); setMode('guru');
       $("loginErr").textContent="Akaun belum diberi peranan. Hubungi admin."; $("loginErr").classList.add('show');
       sb.auth.signOut(); return;
     }
     me=res.data; me.email=user.email;
-    if(me.role==='pelajar'){ enterStudent(); } else { enterApp(); }
+    if(me.role!=='admin'&&me.role!=='guru'){
+      me=null; show("loginView"); setMode('guru');
+      $("loginErr").textContent="Akaun ini bukan akaun guru."; $("loginErr").classList.add('show');
+      sb.auth.signOut(); return;
+    }
+    enterApp();
   });
 }
 
@@ -427,9 +547,10 @@ $("kesalahan").addEventListener('change',updateMark);
 function fillSetup(){
   $("stuRows").innerHTML=students.map(function(s){
     return '<div class="setup-row" data-id="'+s.id+'"><span class="ix">'+s.id+'</span>'+
-      '<input type="text" data-f="nama" value="'+esc(s.nama)+'" placeholder="Nama">'+
-      '<input type="text" data-f="kelas" value="'+esc(s.kelas)+'" placeholder="Kelas">'+
-      '<input type="text" data-f="jawatan" value="'+esc(s.jawatan)+'" placeholder="Jawatan">'+
+      '<input type="text" class="f-nama" data-f="nama" value="'+esc(s.nama)+'" placeholder="Nama pelajar" aria-label="Nama pelajar '+s.id+'">'+
+      '<input type="text" class="f-no" data-f="no_maktab" value="'+esc(s.no_maktab)+'" placeholder="No. maktab" autocapitalize="characters" aria-label="Nombor maktab pelajar '+s.id+'">'+
+      '<input type="text" class="f-kelas" data-f="kelas" value="'+esc(s.kelas)+'" placeholder="Kelas" aria-label="Kelas pelajar '+s.id+'">'+
+      '<input type="text" class="f-jaw" data-f="jawatan" value="'+esc(s.jawatan)+'" placeholder="Jawatan" aria-label="Jawatan pelajar '+s.id+'">'+
       '<button class="sv" data-save="'+s.id+'">Simpan</button></div>';
   }).join('');
 }
@@ -444,8 +565,11 @@ $("stuRows").addEventListener('click',function(e){
   b.disabled=true;
   sb.from('students').update(vals).eq('id',id).then(function(res){
     b.disabled=false;
-    if(res.error){toast('Gagal simpan: '+res.error.message);return;}
-    var s=stuById(id); if(s){s.nama=vals.nama;s.kelas=vals.kelas;s.jawatan=vals.jawatan;}
+    if(res.error){
+      toast(res.error.code==='23505'?'Nombor maktab ini sudah digunakan pelajar lain':'Gagal simpan: '+res.error.message);
+      return;
+    }
+    var s=stuById(id); if(s){s.nama=vals.nama;s.kelas=vals.kelas;s.jawatan=vals.jawatan;s.no_maktab=vals.no_maktab;}
     b.classList.remove('on'); fillPelajar(); render(); toast('Nama pelajar dikemas kini');
   });
 });
@@ -526,7 +650,7 @@ function render(){
   var sbody=$("sumBody");
   if(!rows.length){sbody.innerHTML='<tr><td colspan="6" class="empty">Tiada data lagi</td></tr>';}
   else{
-    sbody.innerHTML=rows.map(function(r){var st=statusOf(r.pts);
+    sbody.innerHTML=rows.map(function(r){var st=statusOf(r.n,r.pts);
       var s=stuById(r.sid)||{nama:'',kelas:'',jawatan:'',id:r.sid};
       var fl=(r.n>=TRIG_OFC||r.pts>=TRIG_PTS);
       return '<tr'+(fl?' class="flagged"':'')+'><td><b>'+esc(s.nama||('Pelajar '+s.id))+'</b>'+
@@ -547,18 +671,14 @@ function render(){
   }).join('');
 }
 
-// ====== PELAJAR VIEW ======
-function enterStudent(){
+// ====== PELAJAR VIEW (hasil semakan nombor maktab) ======
+function renderStudent(s){
   show("studentView");
-  Promise.all([
-    sb.from('students').select('*').eq('id',me.student_id).single(),
-    sb.from('records').select('*').order('id',{ascending:false})
-  ]).then(function(r){
-    var s=r[0].data||{nama:me.nama,kelas:'',jawatan:''};
-    var recs=r[1].data||[];
+  {
+    var recs=s.records||[];
     var total=recs.reduce(function(a,x){return a+x.markah;},0);
-    var st=statusOf(total);
-    $("stuWho").textContent=(s.nama||me.nama||'')+(s.kelas?' · '+s.kelas:'')+(s.jawatan?' · '+s.jawatan:'');
+    var st=statusOf(recs.length,total);
+    $("stuWho").textContent=(s.nama||'Pelajar')+(s.kelas?' · '+s.kelas:'')+(s.jawatan?' · '+s.jawatan:'');
     $("sPts").textContent=total;
     $("sStatus").innerHTML='<span class="badge '+st[0]+'">'+st[1]+'</span>';
     var flagged=(recs.length>=TRIG_OFC||total>=TRIG_PTS);
@@ -574,7 +694,7 @@ function enterStudent(){
           '<span class="score">+'+x.markah+'</span></div>';
       }).join('');
     }
-  });
+  }
 }
 
 // ====== SURAT JPPM ======
@@ -657,6 +777,7 @@ $("themeBtn2").addEventListener('click',toggleTheme);
 
 // ====== INIT ======
 sb.auth.getSession().then(function(res){
+  if(isRecovery){ show("recoveryView"); return; }
   var session=res.data.session;
   if(session&&session.user){ onLogin(session.user); } else { show("loginView"); }
 });
