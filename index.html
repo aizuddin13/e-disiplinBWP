@@ -130,13 +130,21 @@
   details.add[open] summary::before,details.setup[open] summary::before{content:"– "}
   .add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
   .add-grid .full{grid-column:1 / -1}
-  .setup-row{display:grid;grid-template-columns:22px 1fr 1fr;grid-template-areas:"ix nama nama" ". no kelas" ". jaw sv";gap:6px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
-  .setup-row:first-child{border-top:none;margin-top:6px}
+  .setup-row{display:grid;grid-template-columns:22px 1fr 1fr;grid-template-areas:"ix nama nama" ". no kelas" ". jaw jaw";gap:6px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+  .setup-row:first-child{border-top:none}
   .setup-row .ix{grid-area:ix;font-family:var(--font-num);font-size:.72rem;color:var(--muted);text-align:right}
-  .setup-row input{padding:7px 9px;font-size:.84rem}
+  .setup-row.dirty .ix{color:var(--accent);font-weight:700}
+  .setup-row input{padding:8px 9px;font-size:.86rem}
+  .setup-row input.dup{outline:2px solid var(--bad);outline-offset:0}
   .setup-row .f-nama{grid-area:nama}.setup-row .f-no{grid-area:no}.setup-row .f-kelas{grid-area:kelas}.setup-row .f-jaw{grid-area:jaw}
-  .setup-row .sv{grid-area:sv;background:var(--accent);color:#fff;font-size:.74rem;padding:8px 9px;border-radius:7px;opacity:.35;pointer-events:none}
-  .setup-row .sv.on{opacity:1;pointer-events:auto}
+  .stu-actions{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px}
+  .pastebox{background:var(--surface-2);border:1px dashed var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px}
+  .pastebox p{font-size:.78rem;color:var(--muted);margin:0 0 8px}
+  .pastebox code{font-family:var(--font-num);font-size:.74rem;background:var(--surface);padding:1px 5px;border-radius:4px;color:var(--fg)}
+  .pastebox textarea{width:100%;min-height:130px;font-family:var(--font-num);font-size:.8rem;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);resize:vertical}
+  .pastebox .acts{display:flex;gap:8px;margin-top:8px}
+  .savebar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));margin-top:12px}
+  .note a{color:var(--accent-ink);font-weight:700}
   .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px}
   .tab{background:none;color:var(--muted);padding:9px;font-size:.86rem;border-radius:7px}
   .tab.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -144,7 +152,7 @@
   .hint{font-size:.76rem;color:var(--muted);margin-top:10px;text-align:center}
   .toggle{background:none;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:.72rem;font-weight:700;padding:5px 11px}
   .note{background:var(--accent-soft);color:var(--accent-ink);border-radius:var(--radius-sm);padding:9px 12px;font-size:.76rem;margin-bottom:16px}
-  .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(-20px);top:calc(16px + env(safe-area-inset-top,0px));
     background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.84rem;font-weight:600;
     opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:90vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -246,6 +254,8 @@
     </div>
   </header>
 
+  <div class="note" id="setupNote" hidden>Senarai pelajar belum lengkap: <b id="setupMissing">0</b> pelajar belum ada nama atau nombor maktab. <a href="#stuCard">Isi sekarang</a></div>
+
   <section class="card">
     <div class="card-head"><span class="n">1</span><h2>Rekod kesalahan</h2></div>
     <div class="field">
@@ -319,14 +329,24 @@
     </details>
   </section>
 
-  <section class="card">
-    <div class="card-head"><span class="n">5</span><h2>Tetapan — nama pelajar</h2></div>
-    <p class="sub" style="margin-top:0">Isi nama, <b>nombor maktab</b>, kelas &amp; jawatan. Pelajar guna nombor maktab untuk semak rekod sendiri. Tekan Simpan pada baris yang diubah.</p>
-    <details class="setup">
-      <summary>Senarai pelajar</summary>
-      <div id="stuRows"></div>
-    </details>
-    <p class="sub" style="margin-top:12px">Akaun guru diurus di Supabase → Authentication. Pelajar tak perlu akaun.</p>
+  <section class="card" id="stuCard">
+    <div class="card-head"><span class="n">5</span><h2>Senarai pelajar</h2></div>
+    <p class="sub" style="margin:0 0 12px">Isi nama, <b>nombor maktab</b>, kelas &amp; jawatan, kemudian tekan <b>Simpan semua</b>. Pelajar guna nombor maktab untuk semak rekod sendiri.</p>
+    <div class="stu-actions">
+      <button class="btn-ghost sm" id="pasteToggle" type="button">Tampal dari Excel</button>
+      <button class="btn-ghost sm" id="addStu" type="button">+ Tambah pelajar</button>
+    </div>
+    <div class="pastebox" id="pasteBox" hidden>
+      <p>Dalam Excel, susun lajur ikut urutan <code>Nama</code> <code>No. maktab</code> <code>Kelas</code> <code>Jawatan</code>. Blok semua baris, salin (Ctrl+C), dan tampal di bawah. Senarai akan diisi mengikut susunan bermula dari pelajar 1.</p>
+      <textarea id="pasteArea" placeholder="AHMAD ZAKI BIN ALI&#9;MT2401&#9;509&#9;BWP&#10;NUR AINA BINTI HASSAN&#9;MT2402&#9;507&#9;EMC"></textarea>
+      <div class="acts">
+        <button class="btn-ghost sm" id="pasteApply" type="button">Isi ke senarai</button>
+        <button class="btn-ghost sm" id="pasteCancel" type="button">Batal</button>
+      </div>
+    </div>
+    <div id="stuRows"></div>
+    <div class="savebar"><button class="btn-primary" id="saveAllStu" type="button" disabled>Simpan semua</button></div>
+    <p class="sub" style="margin-top:12px">Akaun guru diurus oleh admin. Pelajar tak perlu akaun.</p>
   </section>
 
   <p class="sub" style="text-align:center">e-Disiplin BWP · data disimpan selamat di Supabase · MRSM Taiping</p>
@@ -544,34 +564,91 @@ function updateMark(){
 }
 $("kesalahan").addEventListener('change',updateMark);
 
+// ====== SENARAI PELAJAR (guru isi sendiri) ======
+var newSeq=0;
+function isPlaceholder(s){return !s.nama||/^Pelajar \d+$/.test(String(s.nama).trim());}
+function rowHtml(s,isNew){
+  var id=isNew?('new-'+(++newSeq)):s.id, lbl=isNew?'+':s.id;
+  var nm=isPlaceholder(s)?'':s.nama;
+  return '<div class="setup-row'+(isNew?' dirty':'')+'" data-id="'+id+'"><span class="ix">'+lbl+'</span>'+
+    '<input type="text" class="f-nama" data-f="nama" value="'+esc(nm)+'" placeholder="Nama pelajar'+(isNew?'':' '+s.id)+'" aria-label="Nama pelajar">'+
+    '<input type="text" class="f-no" data-f="no_maktab" value="'+esc(s.no_maktab)+'" placeholder="No. maktab" autocapitalize="characters" aria-label="Nombor maktab">'+
+    '<input type="text" class="f-kelas" data-f="kelas" value="'+esc(s.kelas)+'" placeholder="Kelas" aria-label="Kelas">'+
+    '<input type="text" class="f-jaw" data-f="jawatan" value="'+esc(s.jawatan)+'" placeholder="Jawatan" aria-label="Jawatan">'+
+    '</div>';
+}
 function fillSetup(){
-  $("stuRows").innerHTML=students.map(function(s){
-    return '<div class="setup-row" data-id="'+s.id+'"><span class="ix">'+s.id+'</span>'+
-      '<input type="text" class="f-nama" data-f="nama" value="'+esc(s.nama)+'" placeholder="Nama pelajar" aria-label="Nama pelajar '+s.id+'">'+
-      '<input type="text" class="f-no" data-f="no_maktab" value="'+esc(s.no_maktab)+'" placeholder="No. maktab" autocapitalize="characters" aria-label="Nombor maktab pelajar '+s.id+'">'+
-      '<input type="text" class="f-kelas" data-f="kelas" value="'+esc(s.kelas)+'" placeholder="Kelas" aria-label="Kelas pelajar '+s.id+'">'+
-      '<input type="text" class="f-jaw" data-f="jawatan" value="'+esc(s.jawatan)+'" placeholder="Jawatan" aria-label="Jawatan pelajar '+s.id+'">'+
-      '<button class="sv" data-save="'+s.id+'">Simpan</button></div>';
-  }).join('');
+  newSeq=0;
+  $("stuRows").innerHTML=students.map(function(s){return rowHtml(s,false);}).join('');
+  updateSaveBtn(); updateSetupNote();
+}
+function updateSaveBtn(){
+  var n=$("stuRows").querySelectorAll('.setup-row.dirty').length;
+  $("saveAllStu").disabled=!n;
+  $("saveAllStu").textContent=n?('Simpan semua ('+n+' perubahan)'):'Simpan semua';
+}
+function updateSetupNote(){
+  var miss=students.filter(function(s){return isPlaceholder(s)||!s.no_maktab||!String(s.no_maktab).trim();}).length;
+  $("setupMissing").textContent=miss; $("setupNote").hidden=!miss;
 }
 $("stuRows").addEventListener('input',function(e){
   var row=e.target.closest('.setup-row'); if(!row)return;
-  var b=row.querySelector('.sv'); if(b)b.classList.add('on');
+  row.classList.add('dirty'); e.target.classList.remove('dup'); updateSaveBtn();
 });
-$("stuRows").addEventListener('click',function(e){
-  var b=e.target.closest('.sv'); if(!b)return;
-  var row=b.closest('.setup-row'); var id=row.getAttribute('data-id');
-  var vals={}; row.querySelectorAll('input').forEach(function(inp){vals[inp.getAttribute('data-f')]=inp.value.trim();});
-  b.disabled=true;
-  sb.from('students').update(vals).eq('id',id).then(function(res){
-    b.disabled=false;
-    if(res.error){
-      toast(res.error.code==='23505'?'Nombor maktab ini sudah digunakan pelajar lain':'Gagal simpan: '+res.error.message);
-      return;
-    }
-    var s=stuById(id); if(s){s.nama=vals.nama;s.kelas=vals.kelas;s.jawatan=vals.jawatan;s.no_maktab=vals.no_maktab;}
-    b.classList.remove('on'); fillPelajar(); render(); toast('Nama pelajar dikemas kini');
+$("addStu").addEventListener('click',function(){
+  $("stuRows").insertAdjacentHTML('beforeend',rowHtml({nama:'',no_maktab:'',kelas:'',jawatan:''},true));
+  var last=$("stuRows").lastElementChild; last.querySelector('.f-nama').focus(); updateSaveBtn();
+});
+$("pasteToggle").addEventListener('click',function(){$("pasteBox").hidden=!$("pasteBox").hidden; if(!$("pasteBox").hidden)$("pasteArea").focus();});
+$("pasteCancel").addEventListener('click',function(){$("pasteArea").value='';$("pasteBox").hidden=true;});
+function parsePaste(t){
+  return t.split(/\r?\n/).filter(function(l){return l.trim();}).map(function(l){
+    var c=l.indexOf('\t')>-1?l.split('\t'):l.split(/\s*[;,]\s*/);
+    return c.map(function(x){return x.trim();});
+  }).filter(function(c,i){return !(i===0&&/^nama/i.test(c[0]||''));});
+}
+$("pasteApply").addEventListener('click',function(){
+  var lines=parsePaste($("pasteArea").value);
+  if(!lines.length){toast('Tiada data untuk ditampal');return;}
+  var rows=$("stuRows").querySelectorAll('.setup-row');
+  lines.forEach(function(c,i){
+    var row=rows[i];
+    if(!row){$("stuRows").insertAdjacentHTML('beforeend',rowHtml({nama:'',no_maktab:'',kelas:'',jawatan:''},true));row=$("stuRows").lastElementChild;}
+    var f=['nama','no_maktab','kelas','jawatan'];
+    f.forEach(function(k,j){var inp=row.querySelector('[data-f="'+k+'"]'); if(inp)inp.value=c[j]||'';});
+    row.classList.add('dirty');
   });
+  $("pasteArea").value=''; $("pasteBox").hidden=true; updateSaveBtn();
+  toast(lines.length+' pelajar diisi. Semak, kemudian tekan Simpan semua.');
+});
+$("saveAllStu").addEventListener('click',function(){
+  var all=$("stuRows").querySelectorAll('.setup-row');
+  // semak nombor maktab berulang
+  var seen={}, dup=false;
+  all.forEach(function(r){var inp=r.querySelector('.f-no');var v=inp.value.trim().toUpperCase();inp.classList.remove('dup');
+    if(!v)return; if(seen[v]){dup=true;inp.classList.add('dup');seen[v].classList.add('dup');} else seen[v]=inp;});
+  if(dup){toast('Ada nombor maktab berulang (ditanda merah). Betulkan dulu.');return;}
+  var updates=[], inserts=[];
+  $("stuRows").querySelectorAll('.setup-row.dirty').forEach(function(r){
+    var v={}; r.querySelectorAll('input').forEach(function(inp){v[inp.getAttribute('data-f')]=inp.value.trim();});
+    if(!v.no_maktab)v.no_maktab=null;
+    var id=r.getAttribute('data-id');
+    if(id.indexOf('new-')===0){ if(v.nama||v.no_maktab)inserts.push(v); }
+    else { v.id=+id; updates.push(v); }
+  });
+  var btn=$("saveAllStu"); btn.disabled=true; btn.textContent='Menyimpan…';
+  Promise.all([
+    updates.length?sb.from('students').upsert(updates):Promise.resolve({}),
+    inserts.length?sb.from('students').insert(inserts):Promise.resolve({})
+  ]).then(function(res){
+    var err=null; res.forEach(function(r){if(r&&r.error&&!err)err=r.error;});
+    if(err){
+      toast(err.code==='23505'?'Nombor maktab sudah digunakan pelajar lain.':'Gagal simpan: '+err.message);
+      updateSaveBtn(); return;
+    }
+    toast('Senarai pelajar disimpan');
+    loadAll().then(function(){fillPelajar();fillSetup();render();});
+  }).catch(function(){toast('Masalah sambungan. Cuba lagi.');updateSaveBtn();});
 });
 
 $("addBtn").addEventListener('click',function(){
