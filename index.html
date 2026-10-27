@@ -284,16 +284,16 @@
     <div class="row2">
       <div class="field">
         <label class="fl" for="waktu">Waktu / tempat</label>
-        <input type="text" id="waktu" list="waktuList" placeholder="cth: Peptalk" autocomplete="off">
-        <datalist id="waktuList">
-          <option value="Peptalk"></option><option value="Inspection Jumaat"></option>
-          <option value="Perhimpunan"></option><option value="Waktu PdP"></option>
-        </datalist>
+        <select id="waktu"></select>
       </div>
       <div class="field">
         <label class="fl" for="tarikh">Tarikh</label>
         <input type="text" id="tarikh" readonly>
       </div>
+    </div>
+    <div class="field" id="waktuOtherField" hidden>
+      <label class="fl" for="waktuOther">Nyatakan waktu / tempat</label>
+      <input type="text" id="waktuOther" placeholder="cth: Dewan Makan, Asrama, Surau" autocomplete="off">
     </div>
     <button class="btn-primary" id="addBtn">Rekod kesalahan</button>
   </section>
@@ -748,8 +748,35 @@ $("saveAllStu").addEventListener('click',function(){
   }).catch(function(){toast('Masalah sambungan. Cuba lagi.');updateSaveBtn();});
 });
 
+// ====== WAKTU / TEMPAT ======
+var WAKTU_ASAL=["Peptalk","Inspection Jumaat","Perhimpunan","Waktu PdP"];
+function fillWaktu(){
+  var sel=$("waktu"), cur=sel.value;
+  var seen={}, list=[];
+  WAKTU_ASAL.forEach(function(w){seen[w.toLowerCase()]=1;list.push(w);});
+  // tempat lain yang pernah direkod oleh mana-mana guru
+  var extra=[];
+  records.forEach(function(r){var w=(r.waktu||'').trim(); if(w&&!seen[w.toLowerCase()]){seen[w.toLowerCase()]=1;extra.push(w);}});
+  extra.sort(function(a,b){return a.localeCompare(b,'ms');});
+  sel.innerHTML='<option value="">Tiada / tidak berkenaan</option>'+
+    list.concat(extra).map(function(w){return '<option value="'+esc(w)+'">'+esc(w)+'</option>';}).join('')+
+    '<option value="__other">Tempat lain…</option>';
+  if(cur&&[].some.call(sel.options,function(o){return o.value===cur;}))sel.value=cur;
+  $("waktuOtherField").hidden=(sel.value!=="__other");
+}
+$("waktu").addEventListener('change',function(){
+  var other=(this.value==="__other");
+  $("waktuOtherField").hidden=!other; if(other)$("waktuOther").focus();
+});
+function getWaktu(){
+  var v=$("waktu").value;
+  if(v==="__other")return $("waktuOther").value.trim();
+  return v;
+}
+
 $("addBtn").addEventListener('click',function(){
   var sid=$("pelajar").value; if(!sid)return;
+  if($("waktu").value==="__other"&&!$("waktuOther").value.trim()){toast('Taip waktu / tempat, atau pilih dari senarai');$("waktuOther").focus();return;}
   var cat,nm,mk;
   if($("kesalahan").value==="other"){
     nm=$("otherNm").value.trim(); mk=parseInt($("otherMk").value,10); cat="Lain-lain";
@@ -759,11 +786,12 @@ $("addBtn").addEventListener('click',function(){
   }
   $("addBtn").disabled=true;
   sb.from('records').insert({student_id:sid,kategori:cat,kesalahan:nm,markah:mk,
-    waktu:$("waktu").value.trim()||null,tarikh:new Date().toISOString().slice(0,10),
+    waktu:getWaktu()||null,tarikh:new Date().toISOString().slice(0,10),
     recorded_by:me.id}).then(function(res){
     $("addBtn").disabled=false;
     if(res.error){toast('Gagal: '+res.error.message);return;}
-    $("waktu").value=''; $("otherNm").value=''; $("otherMk").value='1';
+    $("waktu").value=''; $("waktuOther").value=''; $("waktuOtherField").hidden=true;
+    $("otherNm").value=''; $("otherMk").value='1';
     loadAll().then(render); toast('Rekod ditambah');
   });
 });
@@ -807,6 +835,7 @@ $("addOfc").addEventListener('click',function(){
 });
 
 function render(){
+  fillWaktu();
   var total=records.reduce(function(a,r){return a+r.markah;},0);
   var stu={}; records.forEach(function(r){stu[r.student_id]=1;});
   $("tRec").textContent=records.length;
