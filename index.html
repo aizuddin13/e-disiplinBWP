@@ -145,6 +145,8 @@
   .pastebox .acts{display:flex;gap:8px;margin-top:8px}
   .savebar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));margin-top:12px}
   .note a{color:var(--accent-ink);font-weight:700}
+  .signer-row{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .signer-row select{background:var(--surface)}
   .confirm-sheet{max-width:380px;margin:auto}
   .confirm-body{padding:20px 20px 6px}
   .confirm-body h2{font-size:1rem;margin-bottom:8px}
@@ -395,6 +397,10 @@
         <button class="btn-ghost sm" id="closeLetter">Tutup</button>
       </div>
     </div>
+    <div class="signer-row">
+      <label class="fl" for="signer">Ditandatangani oleh</label>
+      <select id="signer"></select>
+    </div>
     <div class="letter" id="letterBody"></div>
   </div>
 </div>
@@ -618,11 +624,13 @@ function loadAll(){
   return Promise.all([
     sb.from('students').select('*').order('id'),
     sb.from('offences').select('*').order('id'),
-    sb.from('records').select('*, recorder:profiles(nama)').order('id',{ascending:false})
+    sb.from('records').select('*, recorder:profiles(nama)').order('id',{ascending:false}),
+    sb.from('profiles').select('id,nama,role').in('role',['admin','guru']).order('nama')
   ]).then(function(r){
-    students=r[0].data||[]; offences=r[1].data||[]; records=r[2].data||[];
+    students=r[0].data||[]; offences=r[1].data||[]; records=r[2].data||[]; teachers=r[3].data||[];
   });
 }
+var teachers=[];
 
 // ====== APP ======
 function enterApp(){
@@ -877,12 +885,12 @@ function renderStudent(s){
 }
 
 // ====== SURAT JPPM ======
-function buildLetter(sid){
+function buildLetter(sid,signerName){
   var s=stuById(sid)||{nama:'',kelas:'',jawatan:'',id:sid};
   var recs=records.filter(function(r){return String(r.student_id)===String(sid);})
     .slice().sort(function(a,b){return a.id-b.id;});
   var total=recs.reduce(function(a,r){return a+r.markah;},0);
-  var guru=(me.nama&&me.nama.trim())?me.nama:"________________________";
+  var guru=(signerName&&String(signerName).trim())?signerName:"________________________";
   var nama=s.nama||('Pelajar '+s.id), kelas=s.kelas||"______", jawatan=s.jawatan||"______";
   var tarikh=fmtDate();
   var ref="MRSM TPG/BWP/JPPM/"+new Date().getFullYear()+"/"+String(sid);
@@ -927,11 +935,26 @@ recs.length+' kesalahan</b> dan jumlah <b>'+total+' markah demerit</b>.\n\n'+
 '.............................................\n( '+esc(guru)+' )\nGuru Penasihat Badan Wakil Pelajar\nMRSM Taiping';
   return {html:html,text:txt};
 }
-var currentLetterText="";
+var currentLetterText="", currentLetterSid=null;
+function fillSigner(){
+  var saved=null; try{saved=localStorage.getItem('edisiplin_signer');}catch(e){}
+  var list=teachers.length?teachers:[{id:me.id,nama:me.nama}];
+  var pick=list.some(function(t){return t.id===saved;})?saved:me.id;
+  $("signer").innerHTML=list.map(function(t){
+    return '<option value="'+esc(t.id)+'"'+(t.id===pick?' selected':'')+'>'+esc(t.nama||'(tiada nama)')+'</option>';}).join('');
+}
+function renderLetter(){
+  var sel=$("signer"), name=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:me.nama;
+  var L=buildLetter(currentLetterSid,name); currentLetterText=L.text; $("letterBody").innerHTML=L.html;
+}
+$("signer").addEventListener('change',function(){
+  try{localStorage.setItem('edisiplin_signer',this.value);}catch(e){}
+  renderLetter();
+});
 $("sumBody").addEventListener('click',function(e){
   var b=e.target.closest('.btn-letter'); if(!b)return;
-  var L=buildLetter(b.getAttribute('data-sid')); currentLetterText=L.text;
-  $("letterBody").innerHTML=L.html; $("overlay").classList.add('show');
+  currentLetterSid=b.getAttribute('data-sid');
+  fillSigner(); renderLetter(); $("overlay").classList.add('show');
 });
 $("closeLetter").addEventListener('click',function(){$("overlay").classList.remove('show');});
 $("overlay").addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
