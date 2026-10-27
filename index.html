@@ -264,6 +264,7 @@
   .letter .kop-logo{height:58px;width:auto;flex:none}
   .letter .kop-txt{flex:1;text-align:center;line-height:1.35}
   .letter .kop small{color:var(--paper-muted)!important}
+  .letter .cetakan{margin-top:18px;padding-top:8px;border-top:1px solid var(--paper-line);font-size:.74rem;font-style:italic;color:var(--paper-muted)}
   .letter table.lt td,.letter table.lt th{border-color:var(--paper-line)!important}
   .letter table.lt th{background:var(--paper-soft)!important}
   @page{size:A4;margin:16mm 18mm}
@@ -1150,9 +1151,11 @@ recs.length+' kesalahan dan jumlah '+total+' markah demerit.\n\n'+
 '   Jumlah: '+total+' markah demerit\n\n'+
 '4. Sehubungan itu, pihak kami memohon pihak jawatankuasa mengambil tindakan '+
 'selanjutnya ke atas pelajar berkenaan mengikut peraturan maktab yang berkuat kuasa.\n\n'+
-'Sekian, terima kasih.\n\n"BERKHIDMAT UNTUK NEGARA"\n\nYang menjalankan tugas,\n\n\n'+
-'.............................................\n( '+guru+' )\n'+
-'Guru Penasihat Badan Wakil Pelajar\nMRSM Taiping';
+'Sekian, terima kasih.\n\n"MALAYSIA MADANI"\n"BERKHIDMAT UNTUK NEGARA"\n"LUAR BANDAR SEJAHTERA"\n\n'+
+'Saya yang menjalankan amanah,\n\n'+
+'( '+guru+' )\n'+
+'Guru Penasihat Badan Wakil Pelajar\nMRSM Taiping\n\n'+
+'Surat ini adalah cetakan komputer dan tidak memerlukan tandatangan.';
 
   var rowsHtml=recs.map(function(r){return '<tr><td>'+fmtDate(r.tarikh)+'</td><td>'+esc(r.kesalahan)+
     '</td><td>'+esc(r.waktu||'-')+'</td><td style="text-align:right">'+r.markah+'</td></tr>';}).join('');
@@ -1170,8 +1173,10 @@ recs.length+' kesalahan</b> dan jumlah <b>'+total+' markah demerit</b>.\n\n'+
 '<table class="lt"><thead><tr><th>Tarikh</th><th>Kesalahan</th><th>Waktu</th><th style="text-align:right">Markah</th></tr></thead>'+
 '<tbody>'+rowsHtml+'<tr><td colspan="3" style="text-align:right"><b>Jumlah</b></td><td style="text-align:right"><b>'+total+'</b></td></tr></tbody></table>'+
 '4. Sehubungan itu, pihak kami memohon pihak jawatankuasa mengambil tindakan selanjutnya ke atas pelajar berkenaan mengikut peraturan maktab yang berkuat kuasa.\n\n'+
-'Sekian, terima kasih.\n\n<b>"BERKHIDMAT UNTUK NEGARA"</b>\n\nYang menjalankan tugas,\n\n\n'+
-'.............................................\n( '+esc(guru)+' )\nGuru Penasihat Badan Wakil Pelajar\nMRSM Taiping';
+'Sekian, terima kasih.\n\n<b>"MALAYSIA MADANI"\n"BERKHIDMAT UNTUK NEGARA"\n"LUAR BANDAR SEJAHTERA"</b>\n\n'+
+'Saya yang menjalankan amanah,\n\n'+
+'<b>( '+esc(guru)+' )</b>\nGuru Penasihat Badan Wakil Pelajar\nMRSM Taiping'+
+'<div class="cetakan">Surat ini adalah cetakan komputer dan tidak memerlukan tandatangan.</div>';
   return {html:html,text:txt};
 }
 var currentLetterText="", currentLetterSid=null;
