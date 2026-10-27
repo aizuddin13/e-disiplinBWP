@@ -254,8 +254,9 @@
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
       <div class="who"><b id="meName">—</b><span id="meRole"></span></div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px">
         <button class="toggle" id="themeBtn">Tema</button>
+        <button class="toggle" id="pwBtn">Kata laluan</button>
         <button class="toggle" id="logoutBtn">Log keluar</button>
       </div>
     </div>
@@ -398,6 +399,30 @@
   </div>
 </div>
 
+<div class="overlay" id="pwBox" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+  <div class="sheet confirm-sheet">
+    <form id="pwForm">
+      <div class="confirm-body">
+        <h2 id="pwTitle">Tukar kata laluan</h2>
+        <div class="field" style="margin-top:12px">
+          <label class="fl" for="pwNew">Kata laluan baru</label>
+          <input type="password" id="pwNew" autocomplete="new-password" minlength="6" required>
+        </div>
+        <div class="field">
+          <label class="fl" for="pwNew2">Taip semula kata laluan baru</label>
+          <input type="password" id="pwNew2" autocomplete="new-password" minlength="6" required>
+        </div>
+        <p style="font-size:.76rem">Sekurang-kurangnya 6 aksara.</p>
+        <div class="err" id="pwErr"></div>
+      </div>
+      <div class="confirm-acts">
+        <button class="btn-ghost" id="pwCancel" type="button">Batal</button>
+        <button class="btn-primary" id="pwSave" type="submit" style="width:auto;margin:0;padding:10px 16px;font-size:.86rem">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="overlay" id="confirmBox" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
   <div class="sheet confirm-sheet">
     <div class="confirm-body">
@@ -475,6 +500,34 @@ $("loginForm").addEventListener('submit',function(e){
 });
 function doLogout(){ sb.auth.signOut(); }
 $("logoutBtn").addEventListener('click',doLogout);
+
+// ====== TUKAR KATA LALUAN (guru yang dah log masuk) ======
+function closePw(){$("pwBox").classList.remove('show');$("pwForm").reset();$("pwErr").classList.remove('show');}
+$("pwBtn").addEventListener('click',function(){
+  $("pwForm").reset(); $("pwErr").classList.remove('show');
+  $("pwBox").classList.add('show'); $("pwNew").focus();
+});
+$("pwCancel").addEventListener('click',closePw);
+$("pwBox").addEventListener('click',function(e){if(e.target===this)closePw();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$("pwBox").classList.contains('show'))closePw();});
+$("pwForm").addEventListener('submit',function(e){
+  e.preventDefault();
+  var a=$("pwNew").value, b=$("pwNew2").value, err=$("pwErr");
+  err.classList.remove('show');
+  if(a.length<6){err.textContent="Kata laluan mesti sekurang-kurangnya 6 aksara.";err.classList.add('show');return;}
+  if(a!==b){err.textContent="Kedua-dua kata laluan tidak sama.";err.classList.add('show');return;}
+  var btn=$("pwSave"); btn.disabled=true; btn.textContent="Menyimpan…";
+  sb.auth.updateUser({password:a}).then(function(res){
+    btn.disabled=false; btn.textContent="Simpan";
+    if(res.error){
+      var m=res.error.message||'';
+      err.textContent=/different|same/i.test(m)?"Kata laluan baru mesti berbeza daripada kata laluan sekarang.":
+        /reauth|recent/i.test(m)?"Sila log keluar dan log masuk semula, kemudian cuba lagi.":"Gagal: "+m;
+      err.classList.add('show'); return;
+    }
+    closePw(); toast('Kata laluan berjaya ditukar');
+  }).catch(function(){btn.disabled=false;btn.textContent="Simpan";err.textContent="Masalah sambungan. Cuba lagi.";err.classList.add('show');});
+});
 
 // ====== TAB PELAJAR / GURU ======
 function setMode(m){
