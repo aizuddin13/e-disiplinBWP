@@ -207,7 +207,9 @@
   .bb-txt span{font-size:.72rem;color:var(--muted)}
   .logo-chip{display:inline-flex;align-items:center;justify-content:center;flex:none;background:var(--chip-bg);padding:var(--chip-pad);border-radius:10px}
   .bb-mara{height:46px;width:auto}
-  .login-crest{display:block;height:88px;width:auto;margin:8px auto 14px}
+  .login-logos{display:flex;align-items:center;justify-content:center;gap:20px;margin:8px 0 16px}
+  .login-crest{display:block;height:84px;width:auto}
+  .login-mara{display:block;height:84px;width:auto}
   .login-foot{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
   .login-foot .lf-mara{height:38px;width:auto}
   .ads-logo{height:18px;width:auto;filter:var(--ads-filter);opacity:.85}
@@ -285,7 +287,7 @@
 <div id="loginView" class="login-wrap" hidden>
   <div class="login-card">
     <div class="brand">
-      <img data-logo="mrsm" alt="Lencana MRSM" class="login-crest">
+      <div class="login-logos"><img data-logo="mrsm" alt="Lencana MRSM" class="login-crest"><span class="logo-chip"><img data-logo="mara" alt="Logo MARA" class="login-mara"></span></div>
       <p class="eyebrow">Badan Wakil Pelajar · MRSM Taiping</p>
       <h1>e-Disiplin BWP</h1>
       <p class="sub">Semakan markah demerit pelajar wakil</p>
@@ -320,7 +322,6 @@
       <div class="ok" id="loginOk"></div>
     </form>
     <div class="login-foot">
-      <span class="logo-chip"><img data-logo="mara" class="lf-mara" alt="Logo MARA"></span>
       <img data-logo="ads" class="ads-logo" alt="Apple Distinguished School">
     </div>
   </div>
@@ -330,7 +331,7 @@
 <div id="recoveryView" class="login-wrap" hidden>
   <div class="login-card">
     <div class="brand">
-      <img data-logo="mrsm" alt="Lencana MRSM" class="login-crest">
+      <div class="login-logos"><img data-logo="mrsm" alt="Lencana MRSM" class="login-crest"><span class="logo-chip"><img data-logo="mara" alt="Logo MARA" class="login-mara"></span></div>
       <p class="eyebrow">e-Disiplin BWP</p>
       <h1>Kata Laluan Baru</h1>
       <p class="sub">Masukkan kata laluan baru anda</p>
