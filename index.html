@@ -145,6 +145,13 @@
   .pastebox .acts{display:flex;gap:8px;margin-top:8px}
   .savebar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));margin-top:12px}
   .note a{color:var(--accent-ink);font-weight:700}
+  .confirm-sheet{max-width:380px;margin:auto}
+  .confirm-body{padding:20px 20px 6px}
+  .confirm-body h2{font-size:1rem;margin-bottom:8px}
+  .confirm-body p{font-size:.86rem;color:var(--muted);line-height:1.55}
+  .confirm-body p b{color:var(--fg)}
+  .confirm-acts{display:flex;gap:8px;justify-content:flex-end;padding:16px 20px 20px}
+  .btn-danger{background:var(--bad);color:#fff;padding:10px 16px;font-size:.86rem}
   .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px}
   .tab{background:none;color:var(--muted);padding:9px;font-size:.86rem;border-radius:7px}
   .tab.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -391,6 +398,19 @@
   </div>
 </div>
 
+<div class="overlay" id="confirmBox" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="sheet confirm-sheet">
+    <div class="confirm-body">
+      <h2 id="confirmTitle">Padam?</h2>
+      <p id="confirmMsg"></p>
+    </div>
+    <div class="confirm-acts">
+      <button class="btn-ghost" id="confirmNo" type="button">Batal</button>
+      <button class="btn-danger" id="confirmYes" type="button">Padam</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
@@ -419,6 +439,22 @@ function statusOf(n,p){
 }
 function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add('show');
   clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2200);}
+// Dialog pengesahan: confirmDialog(tajuk, mesejHTML) -> Promise<boolean>
+function confirmDialog(title,msgHtml){
+  return new Promise(function(resolve){
+    var box=$("confirmBox");
+    $("confirmTitle").textContent=title; $("confirmMsg").innerHTML=msgHtml;
+    box.classList.add('show'); $("confirmNo").focus();
+    function done(v){box.classList.remove('show');
+      $("confirmYes").onclick=$("confirmNo").onclick=box.onclick=null;
+      document.removeEventListener('keydown',onKey); resolve(v);}
+    function onKey(e){if(e.key==='Escape')done(false);}
+    $("confirmYes").onclick=function(){done(true);};
+    $("confirmNo").onclick=function(){done(false);};
+    box.onclick=function(e){if(e.target===box)done(false);};
+    document.addEventListener('keydown',onKey);
+  });
+}
 function show(view){["loadingView","loginView","recoveryView","appView","studentView"].forEach(function(v){$(v).hidden=(v!==view);});}
 var isRecovery=(location.hash.indexOf('type=recovery')>-1);
 
@@ -673,17 +709,30 @@ $("addBtn").addEventListener('click',function(){
 
 $("feed").addEventListener('click',function(e){
   var b=e.target.closest('.del'); if(!b)return;
-  sb.from('records').delete().eq('id',b.getAttribute('data-id')).then(function(res){
-    if(res.error){toast('Tak boleh padam (rekod guru lain)');return;}
-    loadAll().then(render); toast('Rekod dipadam');
+  var id=b.getAttribute('data-id');
+  var r=null; records.forEach(function(x){if(String(x.id)===String(id))r=x;});
+  var s=r?(stuById(r.student_id)||{id:r.student_id}):null;
+  var msg=r?('Rekod <b>'+esc(r.kesalahan)+'</b> (+'+r.markah+' markah) untuk <b>'+esc(s.nama||('Pelajar '+s.id))+
+    '</b> pada '+fmtDate(r.tarikh)+' akan dipadam. Markah demerit pelajar akan dikira semula.'):'Rekod ini akan dipadam.';
+  confirmDialog('Padam rekod ini?',msg).then(function(ok){
+    if(!ok)return;
+    sb.from('records').delete().eq('id',id).then(function(res){
+      if(res.error){toast('Tak boleh padam (rekod guru lain)');return;}
+      loadAll().then(render); toast('Rekod dipadam');
+    });
   });
 });
 
 $("ofcList").addEventListener('click',function(e){
   var b=e.target.closest('.x'); if(!b)return;
-  sb.from('offences').delete().eq('id',b.getAttribute('data-ofc')).then(function(res){
-    if(res.error){toast('Gagal buang');return;}
-    loadAll().then(function(){fillKesalahan();render();}); toast('Kesalahan dibuang');
+  var id=b.getAttribute('data-ofc'), o=ofcById(id);
+  var msg='Jenis kesalahan <b>'+esc(o?o.nama:'')+'</b> akan dibuang dari senarai. Rekod lama yang guna kesalahan ini tetap kekal.';
+  confirmDialog('Buang jenis kesalahan?',msg).then(function(ok){
+    if(!ok)return;
+    sb.from('offences').delete().eq('id',id).then(function(res){
+      if(res.error){toast('Gagal buang');return;}
+      loadAll().then(function(){fillKesalahan();render();}); toast('Kesalahan dibuang');
+    });
   });
 });
 $("addOfc").addEventListener('click',function(){
